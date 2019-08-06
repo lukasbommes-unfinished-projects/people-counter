@@ -1,5 +1,6 @@
+import os
 import json
-from datetime import datetime
+#from datetime import datetime
 
 from flask import Flask, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
@@ -33,6 +34,9 @@ class Room(db.Model):
     def __repr__(self):
         return '<Room %r>' % self.name
 
+    def to_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 class Camera(db.Model):
     id = db.Column(db.Integer, nullable=False, primary_key=True)
     url = db.Column(db.String(200), nullable=False)
@@ -44,6 +48,9 @@ class Camera(db.Model):
     def __repr__(self):
         return '<Camera %r>' % self.url
 
+    def to_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 class Count(db.Model):
    id = db.Column(db.Integer, nullable=False, primary_key=True)
    timestamp = db.Column(db.DateTime, nullable=False)
@@ -53,12 +60,29 @@ class Count(db.Model):
    def __repr__(self):
       return '<Count %r>' % self.id
 
+   def to_dict(self):
+      return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 # REST API
 
 @app.route("/")
 def index():
     return "Welcome to people counter"
+
+@app.route("/people-counter/api/v1.0/rooms", methods=["GET"])
+#@auth.login_required
+def get_rooms():
+    rooms = Room.query.all()
+    return Response(json.dumps([room.to_dict() for room in rooms]),  mimetype='application/json')
+
+@app.route("/people-counter/api/v1.0/rooms/<int:room_id>", methods=["GET"])
+#@auth.login_required
+def get_room(room_id):
+    room = Room.query.get(room_id)
+    return Response(json.dumps(room.to_dict()),  mimetype='application/json')
+
+
 
 @app.route("/people-counter/api/v1.0/counts", methods=["GET"])
 @auth.login_required
@@ -77,4 +101,6 @@ def get_count(room_id):
     return jsonify({"room_id": room_id, "people-count": count})
 
 if __name__ == "__main__":
+    if not os.path.exists('main.db'):
+        db.create_all()
     app.run(host='0.0.0.0', debug=True)
