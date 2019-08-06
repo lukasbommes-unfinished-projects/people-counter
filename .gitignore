@@ -1,0 +1,11 @@
+*.avi
+*.mp4
+*.jpg
+*.png
+*.log
+
+.ipynb_checkpoints/
+__pycache__/
+build/
+
+/counter/data/
