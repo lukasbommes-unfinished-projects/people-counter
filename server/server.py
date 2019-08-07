@@ -2,7 +2,7 @@ import os
 import json
 #from datetime import datetime
 
-from flask import Flask, render_template, jsonify, Response, make_response, abort
+from flask import Flask, render_template, jsonify, Response, make_response, abort, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_httpauth import HTTPBasicAuth
 
@@ -70,8 +70,18 @@ class Count(db.Model):
 def index():
     return render_template("index.html")
 
-@app.route("/setup-cameras")
+@app.route("/setup-cameras", methods=["GET", "POST"])
 def setup_cameras():
+    if request.method == "POST":
+        url = request.form["camera-url"]
+        username = request.form["camera-username"]
+        password = request.form["camera-password"]
+        room_id = request.form["camera-room"]
+        print(url, username, password, room_id)
+        if not url:
+            print("URL invalid")
+        # Todo: perform connectivity check and notify user about connectivity status
+
     rooms = Room.query.all()
     cameras = Camera.query.all()
     return render_template("setup-cameras.html", cameras=cameras, rooms=rooms)

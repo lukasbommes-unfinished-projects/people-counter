@@ -2,6 +2,15 @@
 
 {% block head %}
 <title>People Counter - Camera Setup</title>
+<script type="text/javascript">
+    function toggle_visibility(id) {
+       var e = document.getElementById(id);
+       if(e.style.display == 'block')
+          e.style.display = 'none';
+       else
+          e.style.display = 'block';
+    }
+</script>
 {% endblock %}
 
 {% block body %}
@@ -45,43 +54,43 @@
                   </div>
                   <div class="modal-body">
 
-                      <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text" id="camera-url">URL</span>
-                        </div>
-                        <input type="text" class="form-control" placeholder="rtsp://123.45.67.89/stream" aria-label="URL" aria-describedby="camera-url">
+                    <form id="camera-form" method="POST" action="">
+                      <div class="form-group">
+                        <label for="camera-url">URL</label>
+                        <input type="text" class="form-control" id="camera-url" name="camera-url" placeholder="rtsp://123.45.67.89/stream">
                       </div>
 
-                      <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text" id="camera-username">Username</span>
+                      <div class="form-group">
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" value="" checked id="camera-auth-required" name="camera-auth-required" onclick="toggle_visibility('camera-username-form-group');toggle_visibility('camera-password-form-group');">
+                          <label class="form-check-label" for="camera-auth-required">Authentification required</label>
                         </div>
-                        <input type="text" class="form-control" aria-label="Username" aria-describedby="camera-username">
                       </div>
 
-                      <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text" id="camera-password">Password</span>
-                        </div>
-                        <input type="password" class="form-control" aria-label="Username" aria-describedby="camera-password">
+                      <div class="form-group" id="camera-username-form-group" style="display: block">
+                        <label for="camera-username">Username (optional)</label>
+                        <input type="text" class="form-control" id="camera-username" name="camera-username" placeholder="Username">
                       </div>
 
-                      <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                          <label class="input-group-text" for="inputGroupSelect01">Room</label>
-                        </div>
-                        <select class="custom-select" id="inputGroupSelect01">
-                          <option selected>Choose...</option>
-                          {% for room in rooms %}
-                            <option value="{{ room.id }}">{{ room.name }}</option>
-                          {% endfor %}
+                      <div class="form-group" id="camera-password-form-group" style="display: block">
+                        <label for="camera-password">Password (optional)</label>
+                        <input type="password" class="form-control" id="camera-password" name="camera-password" placeholder="Password">
+                      </div>
+
+                      <div class="form-group">
+                        <label for="camera-room">In which room is the camera?</label>
+                        <select class="form-control" id="camera-room" name="camera-room">
+                            {% for room in rooms %}
+                              <option value="{{ room.id }}">{{ room.name }}</option>
+                            {% endfor %}
                         </select>
                       </div>
+                    </form>
 
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Dismiss</button>
-                    <button type="button" class="btn btn-primary">Add camera</button>
+                    <button type="submit" form="camera-form" class="btn btn-primary">Add camera</button>
                   </div>
                 </div>
               </div>
