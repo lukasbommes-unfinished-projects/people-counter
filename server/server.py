@@ -2,12 +2,12 @@ import os
 import json
 #from datetime import datetime
 
-from flask import Flask, jsonify, Response
+from flask import Flask, render_template, jsonify, Response, make_response, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_httpauth import HTTPBasicAuth
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////peoplecounter/main.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////peoplecounter/server/main.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 auth = HTTPBasicAuth()
@@ -64,22 +64,48 @@ class Count(db.Model):
       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
-# REST API
+# UI
 
 @app.route("/")
 def index():
-    return "Welcome to people counter"
+    return render_template("index.html")
+
+@app.route("/setup-cameras")
+def setup_cameras():
+    rooms = Room.query.all()
+    cameras = Camera.query.all()
+    return render_template("setup-cameras.html", cameras=cameras, rooms=rooms)
+
+@app.route("/setup-rooms")
+def setup_rooms():
+    return render_template("setup-rooms.html")
+
+@app.route("/setup-general")
+def setup_general():
+    return render_template("setup-general.html")
+
+
+# REST API
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
 
 @app.route("/people-counter/api/v1.0/rooms", methods=["GET"])
 #@auth.login_required
 def get_rooms():
     rooms = Room.query.all()
+    if not rooms:
+        abort(404)
     return Response(json.dumps([room.to_dict() for room in rooms]),  mimetype='application/json')
+
 
 @app.route("/people-counter/api/v1.0/rooms/<int:room_id>", methods=["GET"])
 #@auth.login_required
 def get_room(room_id):
     room = Room.query.get(room_id)
+    if not room:
+        abort(404)
     return Response(json.dumps(room.to_dict()),  mimetype='application/json')
 
 
