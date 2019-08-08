@@ -135,10 +135,10 @@ def setup_rooms():
         flash("Added room {}".format(room_form.name.data))
         return redirect(url_for('setup_rooms'))
     rooms = Room.query.all()
-    return render_template("setup-rooms.html", rooms=rooms, room_form=room_form, edit=False)
+    return render_template("setup-rooms.html", rooms=rooms, room_form=room_form, mode="setup")
 
 
-@app.route("/setup-rooms/edit-room-<int:room_id>", methods=["GET", "POST"])
+@app.route("/setup-rooms/edit-room/<int:room_id>", methods=["GET", "POST"])
 def edit_room(room_id):
     room = Room.query.get(room_id)
     room_data = {"name": room.name, "description": room.description}
@@ -150,16 +150,19 @@ def edit_room(room_id):
         flash("Updated room {} (ID: {})".format(room_form.name.data, room.id))
         return redirect(url_for('setup_rooms'))
     rooms = Room.query.all()
-    return render_template("setup-rooms.html", rooms=rooms, room_form=room_form, edit=True)
+    return render_template("setup-rooms.html", rooms=rooms, room_form=room_form, mode="edit")
 
 
-@app.route("/setup-rooms/remove-room-<int:room_id>", methods=["POST"])
+@app.route("/setup-rooms/remove-room/<int:room_id>", methods=["GET", "POST"])
 def remove_room(room_id):
     room = Room.query.get(room_id)
-    db.session.delete(room)
-    db.session.commit()
-    flash("Sucessfully removed {} (ID: {})".format(room.name, room.id))
-    return redirect(url_for('setup_rooms'))
+    if request.method == "POST":
+        db.session.delete(room)
+        db.session.commit()
+        flash("Sucessfully removed {} (ID: {})".format(room.name, room.id))
+        return redirect(url_for('setup_rooms'))
+    rooms = Room.query.all()
+    return render_template("setup-rooms.html", rooms=rooms, mode="remove", room_id=room.id, room_name=room.name)
 
 
 @app.route("/setup-general")

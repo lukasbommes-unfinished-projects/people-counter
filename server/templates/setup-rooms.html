@@ -2,24 +2,6 @@
 
 {% block head %}
 <title>People Counter - Room Setup</title>
-
-<!-- insert room id into remove modal -->
-<script>
-$(document).ready(function(){
-    $('#remove-room-modal').on('show.bs.modal', function (event) {
-      var button = $(event.relatedTarget)
-      var room_id = button.data('roomid')
-      var room_name = button.data('roomname')
-      var remove_url = button.data('removeurl')
-      var modal = $(this)
-      modal.find('.modal-body').html('Are you sure you want to permanentely remove '
-          + room_name + ' (ID: ' + room_id + ')?<br>' + 'Note that all cameras '
-          + 'assigned to this room will be deleted as well.')
-      modal.find('.modal-footer form').attr('action', remove_url)
-    });
-});
-</script>
-
 {% endblock %}
 
 {% block body %}
@@ -37,7 +19,7 @@ $(document).ready(function(){
                             Room {{ room.id }} - {{ room.name }} - {{ room.description }}
                             <span>
                                 <a href="{{ url_for('edit_room', room_id=room.id) }}" class="btn btn-secondary py-0 px-2">Edit</a>
-                                <button type="button" class="btn btn-danger py-0 px-2" data-toggle="modal" data-target="#remove-room-modal" data-removeurl="{{ url_for('remove_room', room_id=room.id) }}" data-roomname="{{ room.name }}" data-roomid="{{ room.id }}">Remove</button>
+                                <a href="{{ url_for('remove_room', room_id=room.id) }}" class="btn btn-danger py-0 px-2">Remove</a>
                             </span>
                         </li>
                     {% endfor %}
@@ -51,71 +33,79 @@ $(document).ready(function(){
         <button type="button" class="btn btn-primary mt-2" data-toggle="modal" data-target="#add-room-modal">New room</button>
 
         <!-- Add Room Modal -->
-        <div class="modal fade" id="add-room-modal" tabindex="-1" role="dialog" aria-labelledby="add-room-modal-label" aria-hidden="true">
-          <div class="modal-dialog" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="add-room-modal-label">New room</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-              <div class="modal-body">
-
-                <form id="room-form" method="POST" action="" novalidate>
-                  {{ room_form.hidden_tag() }}
-                  <div class="form-group">
-                    {{ room_form.name.label }}
-                    {{ room_form.name(class="form-control") }}
-                    {% if room_form.name.errors %}
-                        <script>$('#add-room-modal').modal('show')</script>
-                        {% for error in room_form.name.errors %}
-                            <span style="color: red;">[{{ error }}]</span>
-                        {% endfor %}
-                    {% endif %}
+        {% if mode == "setup" or mode == "edit" %}
+            <div class="modal fade" id="add-room-modal" tabindex="-1" role="dialog" aria-labelledby="add-room-modal-label" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="add-room-modal-label">New room</h5>
+                    <a href="{{ url_for('setup_rooms') }}" class="close" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </a>
                   </div>
-                  <div class="form-group">
-                    {{ room_form.description.label }}
-                    {{ room_form.description(class="form-control") }}
-                  </div>
-                </form>
+                  <div class="modal-body">
 
-              </div>
-              <div class="modal-footer">
-                <a href="{{ url_for('setup_rooms') }}" class="btn btn-secondary">Dismiss</a>
-                {{ room_form.submit(form="room-form", class="btn btn-primary") }}
+                    <form id="room-form" method="POST" action="" novalidate>
+                      {{ room_form.hidden_tag() }}
+                      <div class="form-group">
+                        {{ room_form.name.label }}
+                        {{ room_form.name(class="form-control") }}
+                        {% if room_form.name.errors %}
+                            <script>$('#add-room-modal').modal('show')</script>
+                            {% for error in room_form.name.errors %}
+                                <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+                        {% endif %}
+                      </div>
+                      <div class="form-group">
+                        {{ room_form.description.label }}
+                        {{ room_form.description(class="form-control") }}
+                      </div>
+                    </form>
+
+                  </div>
+                  <div class="modal-footer">
+                    <a href="{{ url_for('setup_rooms') }}" class="btn btn-secondary">Dismiss</a>
+                    {{ room_form.submit(form="room-form", class="btn btn-primary") }}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+        {% endif %}
 
         <!-- Remove room Modal -->
-        <div class="modal fade" id="remove-room-modal" tabindex="-1" role="dialog" aria-labelledby="remove-room-modal-label" aria-hidden="true">
-          <div class="modal-dialog" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="remove-room-modal-label">Remove room</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-              <div class="modal-body"></div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
-                <form method="POST" action="">
-                    <button type="submit" class="btn btn-danger">Yes</button>
-                </form>
+        {% if mode == "remove" %}
+            <div class="modal fade" id="remove-room-modal" tabindex="-1" role="dialog" aria-labelledby="remove-room-modal-label" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="remove-room-modal-label">Remove room</h5>
+                    <a href="{{ url_for('setup_rooms') }}" class="close" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </a>
+                  </div>
+                  <div class="modal-body">
+                      Are you sure you want to permanentely remove {{ room_name }}
+                      (ID: {{ room_id }}) including all cameras assigned to this room?
+                  </div>
+                  <div class="modal-footer">
+                    <a href="{{ url_for('setup_rooms') }}" class="btn btn-secondary">No</a>
+                    <form method="POST" action="{{ url_for('remove_room', room_id=room_id) }}">
+                        <button type="submit" class="btn btn-danger">Yes</button>
+                    </form>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-
+        {% endif %}
     </div>
   </div>
 </div>
 
-{% if edit %}
-<script>$('#add-room-modal').modal('show')</script>
+{% if mode == "edit" %}
+    <script>$('#add-room-modal').modal('show')</script>
+{% elif mode == "remove"%}
+    <script>$('#remove-room-modal').modal('show')</script>
 {% endif %}
 
 {% endblock %}
