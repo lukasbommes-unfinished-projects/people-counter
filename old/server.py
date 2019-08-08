@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_httpauth import HTTPBasicAuth
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField, SelectField, SubmitField
+from wtforms import StringField, PasswordField, TextAreaField, BooleanField, SubmitField
 from wtforms.validators import InputRequired, Optional, Length
 
 from config import Config
@@ -44,9 +44,9 @@ class Room(db.Model):
 
 class Camera(db.Model):
     id = db.Column(db.Integer, nullable=False, primary_key=True)
-    url = db.Column(db.String(256), nullable=False)
-    username = db.Column(db.String(64))
-    password = db.Column(db.String(128))
+    url = db.Column(db.String(200), nullable=False)
+    username = db.Column(db.String(120))
+    password = db.Column(db.String(120))
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     counts = db.relationship("Count", cascade="save-update, delete", backref="camera", lazy=True)
 
@@ -78,14 +78,6 @@ class RoomForm(FlaskForm):
     submit = SubmitField("Save changes")
 
 
-class CameraForm(FlaskForm):
-    url = StringField("Name", validators=[InputRequired(), Length(max=256)])
-    username = StringField("Username", validators=[Optional(), Length(max=64)])
-    password = PasswordField("Password", validators=[Optional(), Length(max=128)])
-    rooms = SelectField("Installed in", coerce=int)
-    submit = SubmitField("Save changes")
-
-
 # UI
 
 @app.route("/")
@@ -95,54 +87,42 @@ def index():
 
 @app.route("/setup-cameras", methods=["GET", "POST"])
 def setup_cameras():
-    camera_form = CameraForm()
-    rooms = Room.query.all()
-    camera_form.rooms.choices = [(room.id, room.name) for room in rooms]
-
-    if camera_form.validate_on_submit():
-        new_cam = Camera(url=camera_form.url.data, username=camera_form.username.data, password=camera_form.password.data)
-        room = Room.query.get(camera_form.rooms.data)
+    if request.method == "POST":
+        url = request.form.get("camera-url")
+        auth_required = request.form.get("camera-auth-required")
+        username = request.form.get("camera-username")
+        password = request.form.get("camera-password")
+        room_id = request.form.get("camera-room")
+        print(url, auth_required, username, password, room_id)
+        # check validity
+        if not url:
+            redirect(url_for('setup_cameras'))
+        if auth_required and (not username or not password):
+                redirect(url_for('setup_cameras'))
+        # Todo: perform connectivity check and notify user about connectivity status
+        # insert new camera into database
+        if auth_required:
+            new_cam = Camera(url=url, username=username, password=password)
+        else:
+            new_cam = Camera(url=url)
+        # get the room and append camera to the room's camera list
+        room = Room.query.get(room_id)
         room.cameras.append(new_cam)
         db.session.commit()
-        flash("Added camera with url {}".format(camera_form.url.data))
-        return redirect(url_for('setup_cameras'))
+        return redirect(url_for('setup_cameras'))  # reload page
 
-    cameras = Camera.query.all()
-    return render_template("setup-cameras.html", cameras=cameras, rooms=rooms, camera_form=camera_form, mode="setup")
-
-
-@app.route("/setup-cameras/edit-camera/<int:cam_id>", methods=["GET", "POST"])
-def edit_camera(cam_id):
-    cam = Camera.query.get(cam_id)
-    camera_data = {"url": cam.url, "username": cam.username, "password": cam.password}
-    camera_form = CameraForm(data=camera_data)
     rooms = Room.query.all()
-    camera_form.rooms.choices = [(room.id, room.name) for room in rooms]
-
-    if camera_form.validate_on_submit():
-        cam.url = camera_form.url.data
-        cam.username = camera_form.username.data
-        cam.password = camera_form.password.data
-        cam.room_id = camera_form.rooms.data
-        db.session.commit()
-        flash("Updated camera {}".format(cam.id))
-        return redirect(url_for('setup_cameras'))
-
     cameras = Camera.query.all()
-    return render_template("setup-cameras.html", cameras=cameras, rooms=rooms, camera_form=camera_form, mode="edit")
+    return render_template("setup-cameras.html", cameras=cameras, rooms=rooms)
 
 
-@app.route("/setup-cameras/remove-camera/<int:cam_id>", methods=["GET", "POST"])
+@app.route("/setup-cameras/remove-camera-<int:cam_id>", methods=["POST"])
 def remove_camera(cam_id):
+    print("Removing cam {}".format(cam_id))
     cam = Camera.query.get(cam_id)
-    if request.method == "POST":
-        db.session.delete(cam)
-        db.session.commit()
-        flash("Sucessfully removed camera {}".format(cam.id))
-        return redirect(url_for('setup_cameras'))
-    rooms = Room.query.all()
-    cameras = Camera.query.all()
-    return render_template("setup-cameras.html", cameras=cameras, rooms=rooms, mode="remove", cam_id=cam.id)
+    db.session.delete(cam)
+    db.session.commit()
+    return redirect(url_for('setup_cameras'))
 
 
 @app.route("/setup-rooms", methods=["GET", "POST"])

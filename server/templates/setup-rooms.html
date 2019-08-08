@@ -38,7 +38,11 @@
               <div class="modal-dialog" role="document">
                 <div class="modal-content">
                   <div class="modal-header">
-                    <h5 class="modal-title" id="add-room-modal-label">New room</h5>
+                      {% if mode == "setup" %}
+                          <h5 class="modal-title" id="add-room-modal-label">New room</h5>
+                      {% else %}
+                          <h5 class="modal-title" id="add-room-modal-label">Edit room</h5>
+                      {% endif %}
                     <a href="{{ url_for('setup_rooms') }}" class="close" aria-label="Close">
                       <span aria-hidden="true">&times;</span>
                     </a>
