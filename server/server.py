@@ -2,13 +2,18 @@ import os
 import json
 #from datetime import datetime
 
-from flask import Flask, render_template, jsonify, Response, make_response, abort, request, redirect, url_for
+from flask import Flask, render_template, jsonify, Response, make_response, abort, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_httpauth import HTTPBasicAuth
 
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, TextAreaField, BooleanField, SubmitField
+from wtforms.validators import InputRequired, Optional, Length
+
+from config import Config
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////peoplecounter/server/main.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config.from_object(Config)
 db = SQLAlchemy(app)
 auth = HTTPBasicAuth()
 
@@ -27,7 +32,7 @@ class User(db.Model):
 
 class Room(db.Model):
     id = db.Column(db.Integer, nullable=False, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(64), nullable=False)
     description = db.Column(db.Text)
     cameras = db.relationship("Camera", cascade="save-update, delete", backref="room", lazy=True)
 
@@ -63,6 +68,14 @@ class Count(db.Model):
    def to_dict(self):
       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
+
+# Forms
+
+# Room Setup
+class RoomForm(FlaskForm):
+    name = StringField("Name", validators=[InputRequired(), Length(max=64)])
+    description = TextAreaField("Description", validators=[Optional(), Length(max=400)])
+    submit = SubmitField("Add room")
 
 # UI
 
@@ -108,9 +121,39 @@ def remove_camera(cam_id):
     db.session.commit()
     return redirect(url_for('setup_cameras'))
 
-@app.route("/setup-rooms")
+@app.route("/setup-rooms", methods=["GET", "POST"])
 def setup_rooms():
-    return render_template("setup-rooms.html")
+    new_room_form = RoomForm()
+    if new_room_form.validate_on_submit():
+        room = Room(name=new_room_form.name.data, description=new_room_form.description.data)
+        db.session.add(room)
+        db.session.commit()
+        flash("Added room {}".format(new_room_form.name.data))
+        return redirect(url_for('setup_rooms'))
+    rooms = Room.query.all()
+    return render_template("setup-rooms.html", rooms=rooms, new_room_form=new_room_form, edit=False)
+
+@app.route("/setup-rooms/edit-room-<int:room_id>", methods=["GET", "POST"])
+def edit_room(room_id):
+    room = Room.query.get(room_id)
+    room_data = {"name": room.name, "description": room.description}
+    new_room_form = RoomForm(data=room_data)
+    if new_room_form.validate_on_submit():
+        room.name = new_room_form.name.data
+        room.description = new_room_form.description.data
+        db.session.commit()
+        flash("Updated room {} (ID: {})".format(new_room_form.name.data, room.id))
+        return redirect(url_for('setup_rooms'))
+    rooms = Room.query.all()
+    return render_template("setup-rooms.html", rooms=rooms, new_room_form=new_room_form, edit=True)
+
+@app.route("/setup-rooms/remove-room-<int:room_id>", methods=["POST"])
+def remove_room(room_id):
+    room = Room.query.get(room_id)
+    db.session.delete(room)
+    db.session.commit()
+    flash("Sucessfully removed {} (ID: {})".format(room.name, room.id))
+    return redirect(url_for('setup_rooms'))
 
 @app.route("/setup-general")
 def setup_general():
