@@ -17,6 +17,7 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 auth = HTTPBasicAuth()
 
+
 # Database ORM
 
 class User(db.Model):
@@ -27,8 +28,6 @@ class User(db.Model):
     def __repr__(self):
         return '<User %r>' % self.username
 
-# One room has many cameras
-# One camera has many counts (at different times)
 
 class Room(db.Model):
     id = db.Column(db.Integer, nullable=False, primary_key=True)
@@ -41,6 +40,7 @@ class Room(db.Model):
 
     def to_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class Camera(db.Model):
     id = db.Column(db.Integer, nullable=False, primary_key=True)
@@ -55,6 +55,7 @@ class Camera(db.Model):
 
     def to_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class Count(db.Model):
    id = db.Column(db.Integer, nullable=False, primary_key=True)
@@ -71,17 +72,18 @@ class Count(db.Model):
 
 # Forms
 
-# Room Setup
 class RoomForm(FlaskForm):
     name = StringField("Name", validators=[InputRequired(), Length(max=64)])
     description = TextAreaField("Description", validators=[Optional(), Length(max=400)])
-    submit = SubmitField("Add room")
+    submit = SubmitField("Save changes")
+
 
 # UI
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/setup-cameras", methods=["GET", "POST"])
 def setup_cameras():
@@ -113,6 +115,7 @@ def setup_cameras():
     cameras = Camera.query.all()
     return render_template("setup-cameras.html", cameras=cameras, rooms=rooms)
 
+
 @app.route("/setup-cameras/remove-camera-<int:cam_id>", methods=["POST"])
 def remove_camera(cam_id):
     print("Removing cam {}".format(cam_id))
@@ -121,31 +124,34 @@ def remove_camera(cam_id):
     db.session.commit()
     return redirect(url_for('setup_cameras'))
 
+
 @app.route("/setup-rooms", methods=["GET", "POST"])
 def setup_rooms():
-    new_room_form = RoomForm()
-    if new_room_form.validate_on_submit():
-        room = Room(name=new_room_form.name.data, description=new_room_form.description.data)
+    room_form = RoomForm()
+    if room_form.validate_on_submit():
+        room = Room(name=room_form.name.data, description=room_form.description.data)
         db.session.add(room)
         db.session.commit()
-        flash("Added room {}".format(new_room_form.name.data))
+        flash("Added room {}".format(room_form.name.data))
         return redirect(url_for('setup_rooms'))
     rooms = Room.query.all()
-    return render_template("setup-rooms.html", rooms=rooms, new_room_form=new_room_form, edit=False)
+    return render_template("setup-rooms.html", rooms=rooms, room_form=room_form, edit=False)
+
 
 @app.route("/setup-rooms/edit-room-<int:room_id>", methods=["GET", "POST"])
 def edit_room(room_id):
     room = Room.query.get(room_id)
     room_data = {"name": room.name, "description": room.description}
-    new_room_form = RoomForm(data=room_data)
-    if new_room_form.validate_on_submit():
-        room.name = new_room_form.name.data
-        room.description = new_room_form.description.data
+    room_form = RoomForm(data=room_data)
+    if room_form.validate_on_submit():
+        room.name = room_form.name.data
+        room.description = room_form.description.data
         db.session.commit()
-        flash("Updated room {} (ID: {})".format(new_room_form.name.data, room.id))
+        flash("Updated room {} (ID: {})".format(room_form.name.data, room.id))
         return redirect(url_for('setup_rooms'))
     rooms = Room.query.all()
-    return render_template("setup-rooms.html", rooms=rooms, new_room_form=new_room_form, edit=True)
+    return render_template("setup-rooms.html", rooms=rooms, room_form=room_form, edit=True)
+
 
 @app.route("/setup-rooms/remove-room-<int:room_id>", methods=["POST"])
 def remove_room(room_id):
@@ -154,6 +160,7 @@ def remove_room(room_id):
     db.session.commit()
     flash("Sucessfully removed {} (ID: {})".format(room.name, room.id))
     return redirect(url_for('setup_rooms'))
+
 
 @app.route("/setup-general")
 def setup_general():
@@ -165,6 +172,7 @@ def setup_general():
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
+
 
 @app.route("/people-counter/api/v1.0/rooms", methods=["GET"])
 #@auth.login_required
@@ -184,7 +192,6 @@ def get_room(room_id):
     return Response(json.dumps(room.to_dict()),  mimetype='application/json')
 
 
-
 @app.route("/people-counter/api/v1.0/counts", methods=["GET"])
 @auth.login_required
 def get_counts():
@@ -194,6 +201,7 @@ def get_counts():
         count = _get_count(db, room_id)
         counts.append({"room_id": room_id, "people-count": count})
     return Response(json.dumps(counts),  mimetype='application/json')
+
 
 @app.route("/people-counter/api/v1.0/counts/<int:room_id>", methods=["GET"])
 @auth.login_required

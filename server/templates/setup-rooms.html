@@ -3,16 +3,19 @@
 {% block head %}
 <title>People Counter - Room Setup</title>
 
-<!-- insert cam id into remove modal -->
+<!-- insert room id into remove modal -->
 <script>
 $(document).ready(function(){
     $('#remove-room-modal').on('show.bs.modal', function (event) {
       var button = $(event.relatedTarget)
       var room_id = button.data('roomid')
+      var room_name = button.data('roomname')
+      var remove_url = button.data('removeurl')
       var modal = $(this)
-      modal.find('.modal-body').html('Are you sure you want to permanentely remove room ' + room_id + '?<br>' +
-          'Note that all cameras assigned to this room will be deleted as well.')
-      modal.find('.modal-footer form').attr('action', 'setup-rooms/remove-room-' + room_id)
+      modal.find('.modal-body').html('Are you sure you want to permanentely remove '
+          + room_name + ' (ID: ' + room_id + ')?<br>' + 'Note that all cameras '
+          + 'assigned to this room will be deleted as well.')
+      modal.find('.modal-footer form').attr('action', remove_url)
     });
 });
 </script>
@@ -33,8 +36,8 @@ $(document).ready(function(){
                         <li href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             Room {{ room.id }} - {{ room.name }} - {{ room.description }}
                             <span>
-                                <a href="{{ url_for('edit_room', room_id=room.id) }}" type="button" class="btn btn-secondary py-0 px-2">Edit</a>
-                                <button type="button" class="btn btn-danger py-0 px-2" data-toggle="modal" data-target="#remove-room-modal" data-roomid="{{ room.id }}">Remove</button>
+                                <a href="{{ url_for('edit_room', room_id=room.id) }}" class="btn btn-secondary py-0 px-2">Edit</a>
+                                <button type="button" class="btn btn-danger py-0 px-2" data-toggle="modal" data-target="#remove-room-modal" data-removeurl="{{ url_for('remove_room', room_id=room.id) }}" data-roomname="{{ room.name }}" data-roomid="{{ room.id }}">Remove</button>
                             </span>
                         </li>
                     {% endfor %}
@@ -60,27 +63,27 @@ $(document).ready(function(){
               <div class="modal-body">
 
                 <form id="room-form" method="POST" action="" novalidate>
-                  {{ new_room_form.hidden_tag() }}
+                  {{ room_form.hidden_tag() }}
                   <div class="form-group">
-                    {{ new_room_form.name.label }}
-                    {{ new_room_form.name(class="form-control") }}
-                    {% if new_room_form.name.errors %}
+                    {{ room_form.name.label }}
+                    {{ room_form.name(class="form-control") }}
+                    {% if room_form.name.errors %}
                         <script>$('#add-room-modal').modal('show')</script>
-                        {% for error in new_room_form.name.errors %}
+                        {% for error in room_form.name.errors %}
                             <span style="color: red;">[{{ error }}]</span>
                         {% endfor %}
                     {% endif %}
                   </div>
                   <div class="form-group">
-                    {{ new_room_form.description.label }}
-                    {{ new_room_form.description(class="form-control") }}
+                    {{ room_form.description.label }}
+                    {{ room_form.description(class="form-control") }}
                   </div>
                 </form>
 
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Dismiss</button>
-                {{ new_room_form.submit(form="room-form", class="btn btn-primary") }}
+                <a href="{{ url_for('setup_rooms') }}" class="btn btn-secondary">Dismiss</a>
+                {{ room_form.submit(form="room-form", class="btn btn-primary") }}
               </div>
             </div>
           </div>
