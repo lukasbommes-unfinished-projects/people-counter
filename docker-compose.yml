@@ -7,6 +7,8 @@ services:
     build: .
     environment:
       - DISPLAY
+      - FLASK_APP=server  # needed for flask run
+      - FLASK_ENV=development  # activate flask debug mode
     ipc: host # for GUI
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw  # for GUI access

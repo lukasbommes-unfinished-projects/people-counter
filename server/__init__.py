@@ -14,7 +14,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField, SelectField, SubmitField, BooleanField
 from wtforms.validators import InputRequired, Optional, Length, ValidationError, Email, EqualTo
 
-from config import Config
+from server.config import Config
 
 # Initialization
 app = Flask(__name__)
