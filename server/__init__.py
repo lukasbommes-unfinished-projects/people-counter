@@ -8,7 +8,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.urls import url_parse
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField, SelectField, SubmitField, BooleanField
@@ -22,7 +21,7 @@ app.config.from_object(Config)
 
 login_manager = LoginManager()  # for user login
 login_manager.init_app(app)
-login_manager.login_view = "login"
+login_manager.login_view = "auth.login"
 
 db = SQLAlchemy(app)
 
@@ -135,47 +134,8 @@ class CameraForm(FlaskForm):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    login_form = LoginForm()
-    if login_form.validate_on_submit():
-        user = User.query.filter_by(username=login_form.username.data).first()
-        if user is None or not user.check_password(login_form.password.data):
-            flash('Invalid username or password')
-            return redirect(url_for('login'))
-        login_user(user)
-        next_page = request.args.get('next')
-        if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('index')
-        flash('Sucessfully logged in')
-        return redirect(next_page)
-    return render_template('login.html', login_form=login_form)
-
-
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    flash('Sucessfully logged out')
-    return redirect(url_for('index'))
-
-
-@app.route("/register", methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    register_form = RegistrationForm()
-    if register_form.validate_on_submit():
-        user = User(username=register_form.username.data, email=register_form.email.data)
-        user.set_password(register_form.password.data)
-        db.session.add(user)
-        db.session.commit()
-        flash('Sucessfully registered')
-        return redirect(url_for('login'))
-    return render_template('register.html', register_form=register_form)
+from server.auth import bp as auth_bp
+app.register_blueprint(auth_bp)#, url_prefix='/auth')
 
 
 # UI
@@ -183,12 +143,6 @@ def register():
 @app.route("/")
 def index():
     return render_template("index.html")
-
-
-@app.route("/loggedinonly")
-@login_required
-def loggedinonly():
-    return "You see this only because you are logged in!"
 
 
 @app.route("/setup-cameras", methods=["GET", "POST"])
