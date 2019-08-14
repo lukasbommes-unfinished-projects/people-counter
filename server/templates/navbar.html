@@ -14,9 +14,9 @@
           Setup
         </a>
         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-          <a class="dropdown-item" href="setup-rooms">Rooms</a>
-          <a class="dropdown-item" href="setup-cameras">Cameras</a>
-          <a class="dropdown-item" href="setup-general">General</a>
+          <a class="dropdown-item" href="{{ url_for('setup.setup_rooms') }}">Rooms</a>
+          <a class="dropdown-item" href="{{ url_for('setup.setup_cameras') }}">Cameras</a>
+          <a class="dropdown-item" href="{{ url_for('setup.setup_general') }}">General</a>
         </div>
       </li>
     </ul>
