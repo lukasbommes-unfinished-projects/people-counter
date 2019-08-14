@@ -122,7 +122,7 @@ class RoomForm(FlaskForm):
 
 
 class CameraForm(FlaskForm):
-    url = StringField("Name", validators=[InputRequired(), Length(max=256)])
+    url = StringField("URL", validators=[InputRequired(), Length(max=256)])
     username = StringField("Username", validators=[Optional(), Length(max=64)])
     password = PasswordField("Password", validators=[Optional(), Length(max=128)])
     rooms = SelectField("Installed in", coerce=int)
