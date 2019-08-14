@@ -10,7 +10,7 @@ from server.models import User
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     login_form = LoginForm()
     if login_form.validate_on_submit():
         user = User.query.filter_by(username=login_form.username.data).first()
@@ -20,7 +20,7 @@ def login():
         login_user(user)
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('index')
+            next_page = url_for('main.index')
         flash('Sucessfully logged in')
         return redirect(next_page)
     return render_template('auth/login.html', login_form=login_form)
@@ -31,13 +31,13 @@ def login():
 def logout():
     logout_user()
     flash('Sucessfully logged out')
-    return redirect(url_for('index'))
+    return redirect(url_for('main.index'))
 
 
 @bp.route("/register", methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     register_form = RegistrationForm()
     if register_form.validate_on_submit():
         user = User(username=register_form.username.data, email=register_form.email.data)
