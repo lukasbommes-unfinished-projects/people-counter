@@ -3,8 +3,9 @@ from werkzeug.urls import url_parse
 from flask_login import login_required, login_user, logout_user, current_user
 from server import db
 from server.auth import bp
+from server.auth.forms import LoginForm, RegistrationForm
+from server.models import User
 
-from server import User, LoginForm, RegistrationForm
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
